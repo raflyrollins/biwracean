@@ -1,4 +1,4 @@
-import { Menu } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import Sidebar from '@/components/admin/Sidebar';
@@ -14,10 +14,12 @@ interface AdminLayoutProps {
     auth: { user: AuthUser };
     title?: string;
     subtitle?: string;
+    flash?: { success?: string };
 }
 
-export default function AdminLayout({ children, auth, title, subtitle }: AdminLayoutProps) {
+export default function AdminLayout({ children, auth, title, subtitle, flash }: AdminLayoutProps) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [showFlash, setShowFlash] = useState(!!flash?.success);
 
     useEffect(() => {
         if (sidebarOpen) {
@@ -31,10 +33,18 @@ export default function AdminLayout({ children, auth, title, subtitle }: AdminLa
         };
     }, [sidebarOpen]);
 
+    useEffect(() => {
+        if (flash?.success) {
+            const timer = setTimeout(() => setShowFlash(false), 5000);
+
+            return () => clearTimeout(timer);
+        }
+    }, [flash?.success]);
+
     return (
-        <div className="flex min-h-screen bg-neutral-primary-bg">
+        <div className="flex h-screen overflow-hidden bg-neutral-primary-bg">
             {/* Desktop sidebar - always visible */}
-            <div className="hidden lg:block">
+            <div className="hidden flex-shrink-0 lg:block">
                 <Sidebar auth={auth} onClose={() => setSidebarOpen(false)} />
             </div>
 
@@ -57,7 +67,15 @@ export default function AdminLayout({ children, auth, title, subtitle }: AdminLa
                 </div>
             </div>
 
-            <div className="flex flex-1 flex-col">
+            <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+                {showFlash && flash?.success && (
+                    <div className="flex items-center gap-3 border-b border-green-200 bg-green-50 px-6 py-3">
+                        <p className="flex-1 text-[14px] text-green-800">{flash.success}</p>
+                        <button onClick={() => setShowFlash(false)} className="text-green-600 hover:text-green-800">
+                            <X className="h-4 w-4" />
+                        </button>
+                    </div>
+                )}
                 <header className="flex items-center gap-3 border-b border-border-default bg-neutral-primary-soft px-6 py-4">
                     <button
                         onClick={() => setSidebarOpen(true)}
@@ -74,7 +92,7 @@ export default function AdminLayout({ children, auth, title, subtitle }: AdminLa
                     </div>
                 </header>
 
-                <main className="flex-1 p-6">{children}</main>
+                <main className="flex-1 overflow-auto p-6">{children}</main>
             </div>
         </div>
     );

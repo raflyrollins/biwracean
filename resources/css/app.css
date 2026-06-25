@@ -75,64 +75,73 @@
     --border-buffer: #ffffff;
 }
 
-@media (prefers-color-scheme: dark) {
+.dark {
+    --neutral-primary-soft: #0f1024;
+    --neutral-primary: #08091a;
+    --neutral-primary-medium: #181a33;
+    --neutral-primary-strong: #262845;
+    --neutral-secondary-soft: #0f1024;
+    --neutral-secondary: #08091a;
+    --neutral-secondary-medium: #181a33;
+    --neutral-secondary-strong: #262845;
+    --neutral-tertiary-soft: #0f1024;
+    --neutral-tertiary: #181a33;
+    --neutral-tertiary-medium: #262845;
+    --neutral-quaternary: #353859;
+
+    --brand-softer: #1a0d4d;
+    --brand-soft: #2d1a80;
+    --brand: #7c4dff;
+    --brand-medium: #2d1a80;
+    --brand-strong: #6733ff;
+
+    --danger-soft: #4d0a0a;
+    --danger-medium: #6b1a1a;
+    --danger-strong: #ff8f8f;
+    --success-soft: #002e22;
+    --success-medium: #004f3b;
+    --success-strong: #00cc88;
+    --warning-soft: #7c2d12;
+    --warning-medium: #7c2d12;
+    --warning-strong: #e86b14;
+
+    --dark: #1a1a3e;
+    --dark-strong: #2a2a55;
+    --disabled: #181a33;
+
+    --heading-color: #ffffff;
+    --body-color: #a8a3c0;
+    --body-subtle-color: #a8a3c0;
+    --on-brand: #ffffff;
+    --on-brand-muted: #f0ebff;
+    --fg-brand: #a78bff;
+    --fg-brand-strong: #c4b0ff;
+    --fg-brand-subtle: #2d1a80;
+    --fg-disabled: #5a5575;
+    --fg-danger: #ff6b6b;
+    --fg-danger-strong: #ff8f8f;
+    --fg-success-strong: #00cc88;
+    --fg-warning: #ffd166;
+    --fg-info: #a78bff;
+
+    --border-default: #181a33;
+    --border-default-medium: #262845;
+    --border-default-strong: #353859;
+    --border-brand: #a78bff;
+    --border-brand-subtle: #2d1a80;
+    --border-success: #004f3b;
+    --border-danger: #ec4747;
+    --border-buffer: #08091a;
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@supports (color-scheme: dark) {
     :root {
-        --neutral-primary-soft: #0f1024;
-        --neutral-primary: #08091a;
-        --neutral-primary-medium: #181a33;
-        --neutral-primary-strong: #262845;
-        --neutral-secondary-soft: #0f1024;
-        --neutral-secondary: #08091a;
-        --neutral-secondary-medium: #181a33;
-        --neutral-secondary-strong: #262845;
-        --neutral-tertiary-soft: #0f1024;
-        --neutral-tertiary: #181a33;
-        --neutral-tertiary-medium: #262845;
-        --neutral-quaternary: #353859;
-
-        --brand-softer: #1a0d4d;
-        --brand-soft: #2d1a80;
-        --brand: #7c4dff;
-        --brand-medium: #2d1a80;
-        --brand-strong: #6733ff;
-
-        --danger-soft: #4d0a0a;
-        --danger-medium: #6b1a1a;
-        --danger-strong: #ff8f8f;
-        --success-soft: #002e22;
-        --success-medium: #004f3b;
-        --success-strong: #00cc88;
-        --warning-soft: #7c2d12;
-        --warning-medium: #7c2d12;
-        --warning-strong: #e86b14;
-
-        --dark: #1a1a3e;
-        --dark-strong: #2a2a55;
-        --disabled: #181a33;
-
-        --heading-color: #ffffff;
-        --body-color: #a8a3c0;
-        --body-subtle-color: #a8a3c0;
-        --on-brand: #ffffff;
-        --on-brand-muted: #f0ebff;
-        --fg-brand: #a78bff;
-        --fg-brand-strong: #c4b0ff;
-        --fg-brand-subtle: #2d1a80;
-        --fg-disabled: #5a5575;
-        --fg-danger: #ff6b6b;
-        --fg-danger-strong: #ff8f8f;
-        --fg-success-strong: #00cc88;
-        --fg-warning: #ffd166;
-        --fg-info: #a78bff;
-
-        --border-default: #181a33;
-        --border-default-medium: #262845;
-        --border-default-strong: #353859;
-        --border-brand: #a78bff;
-        --border-brand-subtle: #2d1a80;
-        --border-success: #004f3b;
-        --border-danger: #ec4747;
-        --border-buffer: #08091a;
+        color-scheme: light;
+    }
+    .dark {
+        color-scheme: dark;
     }
 }
 
@@ -391,6 +400,15 @@ button {
 
 .btn-brand:hover {
     background-color: var(--brand-strong);
+}
+
+.btn-danger {
+    background-color: var(--danger);
+    color: #ffffff;
+}
+
+.btn-danger:hover {
+    background-color: var(--danger-strong);
 }
 
 /* ==========================================

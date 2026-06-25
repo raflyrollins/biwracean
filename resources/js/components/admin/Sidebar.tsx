@@ -1,5 +1,5 @@
-import { Link, router } from '@inertiajs/react';
-import { Anchor, LayoutDashboard, Ship, Route, Building2, Users, Settings, LogOut } from 'lucide-react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { Anchor, LayoutDashboard, Ship, Route, Building2, Ticket, CalendarCheck, Navigation2, ShoppingCart, Shield, Users, Settings, LogOut } from 'lucide-react';
 
 interface AuthUser {
     id: number;
@@ -12,16 +12,41 @@ interface SidebarProps {
     onClose: () => void;
 }
 
-const items = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/admin/dashboard', active: true },
-    { icon: Ship, label: 'Data Kapal', href: '#' },
-    { icon: Route, label: 'Rute', href: '#' },
-    { icon: Building2, label: 'Pelabuhan', href: '#' },
-    { icon: Users, label: 'Pengguna', href: '#' },
-    { icon: Settings, label: 'Pengaturan', href: '#' },
+type PageProps = {
+    auth: { user: AuthUser; permissions: string[] };
+};
+
+type NavItem = {
+    icon: typeof LayoutDashboard;
+    label: string;
+    href: string;
+    permission: string;
+};
+
+const allItems: NavItem[] = [
+    { icon: LayoutDashboard, label: 'Dashboard', href: '/admin/dashboard', permission: 'dashboard' },
+    { icon: Ship, label: 'Data Kapal', href: '/admin/ships', permission: 'ships' },
+    { icon: Navigation2, label: 'Pelayaran', href: '/admin/sailings', permission: 'sailings' },
+    { icon: Route, label: 'Rute', href: '/admin/routes', permission: 'routes' },
+    { icon: Building2, label: 'Pelabuhan', href: '/admin/ports', permission: 'ports' },
+    { icon: Ticket, label: 'Kelas Tiket', href: '/admin/ticket-classes', permission: 'ticket_classes' },
+    { icon: CalendarCheck, label: 'Ketersediaan Tiket', href: '/admin/ticket-availabilities', permission: 'ticket_availabilities' },
+    { icon: ShoppingCart, label: 'Penjualan Tiket', href: '/admin/ticket-orders', permission: 'ticket_orders' },
+    { icon: Users, label: 'Pengguna', href: '/admin/users', permission: 'users' },
+    { icon: Shield, label: 'Role Admin', href: '/admin/roles', permission: 'roles' },
+    { icon: Settings, label: 'Pengaturan', href: '/admin/settings', permission: 'settings' },
 ];
 
 export default function Sidebar({ auth, onClose }: SidebarProps) {
+    const { props, url } = usePage<PageProps>();
+    const permissions = props.auth?.permissions ?? [];
+
+    const hasAccess = (permission: string) => {
+        return permissions.includes('*') || permissions.includes(permission);
+    };
+
+    const items = allItems.filter((item) => hasAccess(item.permission));
+
     const handleLogout = () => {
         router.post('/admin/logout');
     };
@@ -39,14 +64,15 @@ export default function Sidebar({ auth, onClose }: SidebarProps) {
                 <div className="flex flex-col gap-1">
                     {items.map((item) => {
                         const Icon = item.icon;
+                        const isActive = url.startsWith(item.href);
 
                         return (
                             <Link
                                 key={item.label}
                                 href={item.href}
                                 onClick={onClose}
-                                className={`flex items-center gap-3 px-3 py-2.5 text-[14px] font-medium transition-colors ${
-                                    item.active
+                                className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-[14px] font-medium transition-colors ${
+                                    isActive
                                         ? 'bg-neutral-secondary-strong text-fg-brand-strong'
                                         : 'text-body hover:bg-neutral-secondary-medium hover:text-heading'
                                 }`}
@@ -66,7 +92,7 @@ export default function Sidebar({ auth, onClose }: SidebarProps) {
                 </div>
                 <button
                     onClick={handleLogout}
-                    className="flex w-full items-center gap-3 px-3 py-2.5 text-[14px] font-medium text-fg-danger transition-colors hover:bg-danger-soft"
+                    className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-[14px] font-medium text-fg-danger transition-colors hover:bg-danger-soft"
                 >
                     <LogOut className="h-5 w-5 shrink-0" />
                     Keluar

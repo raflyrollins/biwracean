@@ -4,9 +4,10 @@ import { useState } from 'react';
 import Button from '@/components/ui/Button';
 
 const navLinks = [
-    { href: '#about', label: 'Tentang' },
-    { href: '#services', label: 'Layanan' },
-    { href: '#contact', label: 'Kontak' },
+    { href: '/jadwal', label: 'Jadwal', internal: true },
+    { href: '#about', label: 'Tentang', internal: false },
+    { href: '#services', label: 'Layanan', internal: false },
+    { href: '#contact', label: 'Kontak', internal: false },
 ];
 
 export default function Navbar() {
@@ -21,15 +22,25 @@ export default function Navbar() {
                 </span>
 
                 <div className="hidden items-center gap-10 md:flex">
-                    {navLinks.map((l) => (
-                        <a
-                            key={l.href}
-                            href={l.href}
-                            className="text-sm font-medium text-on-brand-muted/80 transition-colors hover:text-on-brand"
-                        >
-                            {l.label}
-                        </a>
-                    ))}
+                    {navLinks.map((l) =>
+                        l.internal ? (
+                            <Link
+                                key={l.href}
+                                href={l.href}
+                                className="text-sm font-medium text-on-brand-muted/80 transition-colors hover:text-on-brand"
+                            >
+                                {l.label}
+                            </Link>
+                        ) : (
+                            <a
+                                key={l.href}
+                                href={l.href}
+                                className="text-sm font-medium text-on-brand-muted/80 transition-colors hover:text-on-brand"
+                            >
+                                {l.label}
+                            </a>
+                        )
+                    )}
                     <Link
                         href="/admin/login"
                         className="btn btn-white !px-6 !py-2.5 text-sm"
@@ -60,16 +71,27 @@ export default function Navbar() {
             >
                 <div className="border-t border-on-brand/15 bg-white px-6 pt-6 pb-8">
                     <div className="flex flex-col gap-6">
-                        {navLinks.map((l) => (
-                            <a
-                                key={l.href}
-                                href={l.href}
-                                onClick={() => setMobileOpen(false)}
-                                className="text-[15px] font-medium text-heading"
-                            >
-                                {l.label}
-                            </a>
-                        ))}
+                        {navLinks.map((l) =>
+                            l.internal ? (
+                                <Link
+                                    key={l.href}
+                                    href={l.href}
+                                    onClick={() => setMobileOpen(false)}
+                                    className="text-[15px] font-medium text-heading"
+                                >
+                                    {l.label}
+                                </Link>
+                            ) : (
+                                <a
+                                    key={l.href}
+                                    href={l.href}
+                                    onClick={() => setMobileOpen(false)}
+                                    className="text-[15px] font-medium text-heading"
+                                >
+                                    {l.label}
+                                </a>
+                            )
+                        )}
                         <Link
                             href="/admin/login"
                             onClick={() => setMobileOpen(false)}

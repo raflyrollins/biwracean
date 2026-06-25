@@ -1,0 +1,259 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Method App\\Http\\Controllers\\AuthController\:\:create\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/AuthController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\AuthController\:\:destroy\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/AuthController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\AuthController\:\:store\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/AuthController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\DashboardController\:\:index\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\PortController\:\:create\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/PortController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\PortController\:\:destroy\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/PortController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\PortController\:\:edit\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/PortController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\PortController\:\:index\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/PortController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\PortController\:\:store\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/PortController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\PortController\:\:update\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/PortController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\RouteController\:\:create\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/RouteController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\RouteController\:\:destroy\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/RouteController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\RouteController\:\:edit\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/RouteController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\RouteController\:\:index\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/RouteController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\RouteController\:\:store\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/RouteController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\RouteController\:\:update\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/RouteController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\SettingsController\:\:index\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/SettingsController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\ShipController\:\:create\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/ShipController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\ShipController\:\:destroy\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/ShipController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\ShipController\:\:edit\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/ShipController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\ShipController\:\:index\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/ShipController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\ShipController\:\:store\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/ShipController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\ShipController\:\:update\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/ShipController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\TicketAvailabilityController\:\:create\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/TicketAvailabilityController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\TicketAvailabilityController\:\:destroy\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/TicketAvailabilityController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\TicketAvailabilityController\:\:edit\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/TicketAvailabilityController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\TicketAvailabilityController\:\:index\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/TicketAvailabilityController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\TicketAvailabilityController\:\:store\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/TicketAvailabilityController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\TicketAvailabilityController\:\:update\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/TicketAvailabilityController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\TicketClassController\:\:create\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/TicketClassController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\TicketClassController\:\:destroy\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/TicketClassController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\TicketClassController\:\:edit\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/TicketClassController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\TicketClassController\:\:index\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/TicketClassController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\TicketClassController\:\:store\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/TicketClassController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\TicketClassController\:\:update\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/TicketClassController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\UserController\:\:create\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/UserController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\UserController\:\:destroy\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/UserController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\UserController\:\:edit\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/UserController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\UserController\:\:index\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/UserController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\UserController\:\:store\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/UserController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\UserController\:\:update\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/UserController.php
+
+		-
+			message: '#^Match arm comparison between 4 and 4 is always true\.$#'
+			identifier: match.alwaysTrue
+			count: 1
+			path: database/seeders/TicketAvailabilitySeeder.php
+
+		-
+			message: '#^Match arm comparison between 5 and 5 is always true\.$#'
+			identifier: match.alwaysTrue
+			count: 1
+			path: database/seeders/TicketAvailabilitySeeder.php
