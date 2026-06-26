@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Button from '@/components/ui/Button';
 
 const navLinks = [
-    { href: '/jadwal', label: 'Jadwal', internal: true },
     { href: '#about', label: 'Tentang', internal: false },
     { href: '#services', label: 'Layanan', internal: false },
     { href: '#contact', label: 'Kontak', internal: false },

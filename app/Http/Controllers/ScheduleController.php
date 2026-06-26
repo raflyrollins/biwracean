@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sailing;
-use App\Models\Ship;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -24,7 +23,7 @@ class ScheduleController extends Controller
         ])
             ->whereYear('departure_date', $year)
             ->whereMonth('departure_date', $month)
-            ->where('status', 'active')
+            ->whereIn('status', ['scheduled', 'in_progress'])
             ->orderBy('departure_date')
             ->get();
 
@@ -66,7 +65,7 @@ class ScheduleController extends Controller
 
         $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
 
-        return Inertia::render('public/schedule', [
+        return Inertia::render('admin/schedule', [
             'grouped' => $grouped,
             'month' => $month,
             'year' => $year,

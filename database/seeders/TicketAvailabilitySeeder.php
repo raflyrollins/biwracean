@@ -11,38 +11,75 @@ class TicketAvailabilitySeeder extends Seeder
 {
     public function run(): void
     {
-        $routeIds = [1, 2, 3, 5];
-        $classIds = [1, 2, 3, 4];
+        TicketAvailability::query()->delete();
 
-        foreach ($routeIds as $routeId) {
+        $today = Carbon::today();
+
+        $routeClassPrices = [
+            // Ship 1: KM. Bahari Express — Jakarta–Medan (route 1)
+            1 => [
+                1 => 175000, // Ekonomi
+                2 => 315000, // Bisnis
+                3 => 612500, // Eksekutif
+                4 => 875000, // VIP
+            ],
+            // Ship 1: Medan–Denpasar (route 8)
+            8 => [
+                1 => 200000,
+                2 => 360000,
+                3 => 700000,
+                4 => 1000000,
+            ],
+            // Ship 2: Surabaya–Makassar (route 3)
+            3 => [
+                1 => 250000,
+                2 => 450000,
+                3 => 875000,
+                5 => 125000, // Motor
+                6 => 350000, // Mobil
+            ],
+            // Ship 3: Jakarta–Surabaya (route 9)
+            9 => [
+                1 => 225000,
+                2 => 405000,
+                4 => 1125000,
+            ],
+            // Ship 3: Surabaya–Makassar (route 10)
+            10 => [
+                1 => 275000,
+                2 => 495000,
+                4 => 1375000,
+            ],
+            // Ship 3: Makassar–Batam (route 11)
+            11 => [
+                1 => 300000,
+                2 => 540000,
+                4 => 1500000,
+            ],
+            // Ship 4: Jakarta–Surabaya (route 7)
+            7 => [
+                5 => 150000, // Motor
+                6 => 450000, // Mobil
+            ],
+        ];
+
+        foreach ($routeClassPrices as $routeId => $classes) {
             $route = Route::with('ship.shipTicketClasses')->find($routeId);
+
             if (! $route) {
                 continue;
             }
 
-            foreach ($classIds as $classId) {
+            foreach ($classes as $classId => $price) {
                 $shipClass = $route->ship->shipTicketClasses
                     ->firstWhere('ticket_class_id', $classId);
 
-                for ($day = 0; $day < 7; $day++) {
-                    $date = Carbon::now()->addDays($day)->format('Y-m-d');
-                    $basePrice = match ($routeId) {
-                        1, 2 => 175000,
-                        3 => 250000,
-                        5 => 125000,
-                        default => 150000,
-                    };
+                $stock = $shipClass?->seat_count ?? $shipClass?->bedroom_count ?? 100;
 
-                    $price = match ($classId) {
-                        1 => $basePrice,
-                        2 => (int) ($basePrice * 1.8),
-                        3 => (int) ($basePrice * 3.5),
-                        4 => (int) ($basePrice * 5),
-                        default => $basePrice,
-                    };
-
-                    $stock = $shipClass?->seat_count ?? $shipClass?->bedroom_count ?? 100;
-                    $sold = max(0, min(rand(0, (int) ($stock * 0.8)), $stock - 1));
+                // Create availability for 7 days starting from tomorrow
+                for ($day = 1; $day <= 8; $day++) {
+                    $date = $today->copy()->addDays($day)->format('Y-m-d');
+                    $sold = max(0, min(rand(0, (int) ($stock * 0.6)), max($stock - 5, 1)));
 
                     TicketAvailability::create([
                         'route_id' => $routeId,

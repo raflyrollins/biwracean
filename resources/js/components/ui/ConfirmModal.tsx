@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle, X } from 'lucide-react';
 
 interface ConfirmModalProps {
     open: boolean;
@@ -7,7 +7,7 @@ interface ConfirmModalProps {
     message: string;
     confirmLabel?: string;
     cancelLabel?: string;
-    variant?: 'danger' | 'warning';
+    variant?: 'danger' | 'warning' | 'success';
     onConfirm: () => void;
     onCancel: () => void;
 }
@@ -64,17 +64,21 @@ export default function ConfirmModal({
                 <div className="flex flex-col items-center text-center">
                     <div
                         className={`mb-4 flex h-12 w-12 items-center justify-center rounded-full ${
-                            variant === 'danger' ? 'bg-danger-soft' : 'bg-yellow-100'
+                            variant === 'danger' ? 'bg-danger-soft' : variant === 'success' ? 'bg-success-soft' : 'bg-yellow-100'
                         }`}
                     >
-                        <AlertTriangle
-                            className={`h-6 w-6 ${
-                                variant === 'danger' ? 'text-fg-danger' : 'text-yellow-600'
-                            }`}
-                        />
+                        {variant === 'success' ? (
+                            <CheckCircle className="h-6 w-6 text-fg-success" />
+                        ) : (
+                            <AlertTriangle
+                                className={`h-6 w-6 ${
+                                    variant === 'danger' ? 'text-fg-danger' : 'text-yellow-600'
+                                }`}
+                            />
+                        )}
                     </div>
                     <h3 className="text-[16px] font-semibold text-heading">{title}</h3>
-                    <p className="mt-2 text-[14px] text-body">{message}</p>
+                    <p className="mt-2 text-[14px] text-body whitespace-pre-line">{message}</p>
                 </div>
 
                 <div className="mt-6 flex items-center gap-3">
@@ -88,7 +92,7 @@ export default function ConfirmModal({
                         ref={confirmRef}
                         onClick={onConfirm}
                         className={`btn flex-1 ${
-                            variant === 'danger' ? 'btn-danger' : 'btn-brand'
+                            variant === 'danger' ? 'btn-danger' : variant === 'success' ? 'btn-brand' : 'btn-brand'
                         }`}
                     >
                         {confirmLabel}

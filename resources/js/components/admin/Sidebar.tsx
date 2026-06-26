@@ -1,5 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { Anchor, LayoutDashboard, Ship, Route, Building2, Ticket, CalendarCheck, Navigation2, ShoppingCart, Shield, Users, Settings, LogOut } from 'lucide-react';
+import { Anchor, LayoutDashboard, Ship, Route, Building2, Ticket, Calendar, CalendarCheck, Navigation2, ShoppingCart, Shield, Users, Settings, LogOut } from 'lucide-react';
 
 interface AuthUser {
     id: number;
@@ -25,6 +25,7 @@ type NavItem = {
 
 const allItems: NavItem[] = [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/admin/dashboard', permission: 'dashboard' },
+    { icon: Calendar, label: 'Jadwal', href: '/admin/jadwal', permission: 'dashboard' },
     { icon: Ship, label: 'Data Kapal', href: '/admin/ships', permission: 'ships' },
     { icon: Navigation2, label: 'Pelayaran', href: '/admin/sailings', permission: 'sailings' },
     { icon: Route, label: 'Rute', href: '/admin/routes', permission: 'routes' },

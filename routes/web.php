@@ -19,8 +19,6 @@ Route::get('/', function () {
     return inertia('public/landing');
 })->name('home');
 
-Route::get('/jadwal', [ScheduleController::class, 'index'])->name('schedule');
-
 Route::middleware('guest')->group(function () {
     Route::get('/admin/login', [AuthController::class, 'create'])->name('admin.login');
     Route::post('/admin/login', [AuthController::class, 'store'])->name('admin.login.store');
@@ -32,6 +30,7 @@ Route::middleware('auth:web')->group(function () {
 
 Route::middleware(['auth:web', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/jadwal', [ScheduleController::class, 'index'])->name('jadwal');
 
     Route::resource('/ships', ShipController::class)
         ->except('show')
@@ -67,7 +66,10 @@ Route::middleware(['auth:web', 'admin'])->prefix('admin')->name('admin.')->group
         ->names(['index' => 'roles.index', 'create' => 'roles.create', 'store' => 'roles.store', 'edit' => 'roles.edit', 'update' => 'roles.update', 'destroy' => 'roles.destroy']);
 
     Route::get('/ticket-orders', [TicketOrderController::class, 'index'])->name('ticket-orders.index');
-    Route::post('/ticket-orders/{ticket_order}/validate', [TicketOrderController::class, 'validate'])->name('ticket-orders.validate');
+    Route::get('/ticket-orders/create', [TicketOrderController::class, 'create'])->name('ticket-orders.create');
+    Route::post('/ticket-orders', [TicketOrderController::class, 'store'])->name('ticket-orders.store');
+    Route::post('/ticket-orders/{ticket_order}/pay', [TicketOrderController::class, 'pay'])->name('ticket-orders.pay');
+    Route::post('/ticket-orders/{ticket_order}/validate', [TicketOrderController::class, 'validateOrder'])->name('ticket-orders.validate');
     Route::post('/ticket-orders/{ticket_order}/cancel', [TicketOrderController::class, 'cancel'])->name('ticket-orders.cancel');
 
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');

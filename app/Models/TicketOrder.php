@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -20,13 +21,28 @@ use Illuminate\Support\Str;
  * @property string $customer_email
  * @property string $customer_phone
  * @property string $status
+ * @property int|null $user_id
  * @property string|null $notes
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Sailing $sailing
  * @property-read SailingLeg $sailingLeg
  * @property-read TicketClass $ticketClass
+ * @property-read User $user
  */
+#[Fillable([
+    'user_id',
+    'sailing_id',
+    'sailing_leg_id',
+    'ticket_class_id',
+    'quantity',
+    'total_price',
+    'customer_name',
+    'customer_email',
+    'customer_phone',
+    'status',
+    'notes',
+])]
 class TicketOrder extends Model
 {
     protected static function booted(): void
@@ -55,6 +71,11 @@ class TicketOrder extends Model
     public function ticketClass(): BelongsTo
     {
         return $this->belongsTo(TicketClass::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public static function generateBookingCode(): string

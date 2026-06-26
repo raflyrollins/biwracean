@@ -1,10 +1,12 @@
-import { Head, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
+import { Plus } from 'lucide-react';
+import Pusher from 'pusher-js';
+import { useEffect, useState } from 'react';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import DatePicker from '@/components/ui/DatePicker';
-import SearchInput from '@/components/ui/SearchInput';
-import PerPageSelector from '@/components/ui/PerPageSelector';
 import Pagination from '@/components/ui/Pagination';
+import PerPageSelector from '@/components/ui/PerPageSelector';
+import SearchInput from '@/components/ui/SearchInput';
 import AdminLayout from '@/layouts/AdminLayout';
 
 interface SailingLeg {
@@ -93,15 +95,74 @@ export default function Index({
     orders: PaginatedData<TicketOrder>;
     filters: Filters;
 }) {
-    const [actionTarget, setActionTarget] = useState<{ uuid: string; action: 'validate' | 'cancel'; label: string } | null>(null);
+    const [orderList, setOrderList] = useState(orders.data);
+    const [actionTarget, setActionTarget] = useState<{ uuid: string; action: 'pay' | 'validate' | 'cancel'; label: string } | null>(null);
+
+    useEffect(() => {
+        let echo: { channel: (ch: string) => { listen: (event: string, callback: (data: unknown) => void) => void } } | null = null;
+
+        import('laravel-echo').then(({ default: Echo }) => {
+            const win = window as unknown as Record<string, unknown>;
+
+            if (typeof window !== 'undefined' && win.Echo) {
+                echo = win.Echo as typeof echo;
+            } else if (typeof window !== 'undefined') {
+                const echoInstance = new Echo({
+                    broadcaster: 'reverb',
+                    Pusher,
+                    key: import.meta.env.VITE_REVERB_APP_KEY,
+                    wsHost: import.meta.env.VITE_REVERB_HOST,
+                    wsPort: import.meta.env.VITE_REVERB_PORT,
+                    wssPort: import.meta.env.VITE_REVERB_PORT,
+                    forceTLS: import.meta.env.VITE_REVERB_SCHEME === 'https',
+                    enabledTransports: ['ws', 'wss'],
+                });
+
+                win.Echo = echoInstance;
+                echo = echoInstance;
+            }
+
+            if (!echo) {
+                return;
+            }
+
+            const channel = echo.channel('admin.ticket-orders');
+
+            channel.listen('.ticket-order.created', (data: unknown) => {
+                const d = data as { order: TicketOrder };
+                setOrderList((prev) => [d.order, ...prev]);
+            });
+
+            channel.listen('.ticket-order.status-changed', (data: unknown) => {
+                const d = data as { uuid: string; newStatus: string };
+                setOrderList((prev) =>
+                    prev.map((o) =>
+                        o.uuid === d.uuid ? { ...o, status: d.newStatus } : o,
+                    ),
+                );
+            });
+        });
+
+        return () => {
+            if (echo) {
+                try {
+                    echo.channel('admin.ticket-orders');
+                } catch {
+                    // cleanup
+                }
+            }
+        };
+    }, []);
 
     const applyFilter = (key: string, value: string | number | undefined) => {
         const params = new URLSearchParams(window.location.search);
+
         if (value === undefined || value === '' || value === null) {
             params.delete(key);
         } else {
             params.set(key, String(value));
         }
+
         params.delete('page');
         router.get(`/admin/ticket-orders?${params.toString()}`);
     };
@@ -110,14 +171,24 @@ export default function Index({
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(price);
     };
 
-    const actionMessages: Record<string, { title: string; message: (label: string) => string }> = {
+    const actionMessages: Record<string, { title: string; message: (label: string) => string; confirmLabel: string; variant: 'danger' | 'warning' | 'success' }> = {
+        pay: {
+            title: 'Konfirmasi Pembayaran',
+            message: (label) => `Konfirmasi pembayaran tiket "${label}"?\n\nPembayaran akan mengurangi stok tiket yang tersedia.`,
+            confirmLabel: 'Ya, Bayar',
+            variant: 'warning',
+        },
         validate: {
             title: 'Validasi Tiket',
-            message: (label) => `Validasi tiket "${label}"?`,
+            message: (label) => `Validasi tiket "${label}"?\n\nTiket akan ditandai sebagai tervalidasi dan siap digunakan.`,
+            confirmLabel: 'Ya, Validasi',
+            variant: 'success',
         },
         cancel: {
             title: 'Batalkan Tiket',
-            message: (label) => `Batalkan tiket "${label}"?`,
+            message: (label) => `Batalkan tiket "${label}"?\n\nTiket yang sudah dibayar akan mengembalikan stok.`,
+            confirmLabel: 'Ya, Batalkan',
+            variant: 'danger',
         },
     };
 
@@ -129,6 +200,8 @@ export default function Index({
                 open={!!actionTarget}
                 title={actionTarget ? actionMessages[actionTarget.action].title : ''}
                 message={actionTarget ? actionMessages[actionTarget.action].message(actionTarget.label) : ''}
+                confirmLabel={actionTarget ? actionMessages[actionTarget.action].confirmLabel : ''}
+                variant={actionTarget ? actionMessages[actionTarget.action].variant : 'danger'}
                 onConfirm={() => {
                     if (actionTarget) {
                         router.post(`/admin/ticket-orders/${actionTarget.uuid}/${actionTarget.action}`);
@@ -138,10 +211,17 @@ export default function Index({
                 onCancel={() => setActionTarget(null)}
             />
 
-            <div className="mb-6">
+            <div className="mb-6 flex items-center justify-between">
                 <p className="text-[14px] text-body">
                     Daftar pemesanan tiket pelanggan.
                 </p>
+                <Link
+                    href="/admin/ticket-orders/create"
+                    className="btn btn-brand inline-flex items-center gap-2 h-9 px-4 text-[13px]"
+                >
+                    <Plus className="h-4 w-4" />
+                    Buat Pesanan Baru
+                </Link>
             </div>
 
             <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -197,17 +277,18 @@ export default function Index({
                         </tr>
                     </thead>
                     <tbody>
-                        {orders.data.length === 0 ? (
+                        {orderList.length === 0 ? (
                             <tr>
                                 <td colSpan={8} className="px-4 py-8 text-center text-[14px] text-body">
                                     Belum ada pemesanan tiket.
                                 </td>
                             </tr>
                         ) : (
-                            orders.data.map((order) => {
+                            orderList.map((order) => {
                                 const routeName = order.sailing_leg
                                     ? `${order.sailing_leg.originPort?.name ?? '?'} → ${order.sailing_leg.destinationPort?.name ?? '?'}`
                                     : '—';
+                                const canPay = order.status === 'pending';
                                 const canValidate = order.status === 'paid';
                                 const canCancel = order.status === 'pending' || order.status === 'paid';
 
@@ -234,6 +315,14 @@ export default function Index({
                                         </td>
                                         <td className="px-4 py-3 text-right">
                                             <div className="flex items-center justify-end gap-2">
+                                                {canPay && (
+                                                    <button
+                                                        onClick={() => setActionTarget({ uuid: order.uuid, action: 'pay', label: order.booking_code })}
+                                                        className="text-[13px] font-medium text-fg-info underline underline-offset-2 hover:no-underline"
+                                                    >
+                                                        Bayar
+                                                    </button>
+                                                )}
                                                 {canValidate && (
                                                     <button
                                                         onClick={() => setActionTarget({ uuid: order.uuid, action: 'validate', label: order.booking_code })}
@@ -250,7 +339,7 @@ export default function Index({
                                                         Batalkan
                                                     </button>
                                                 )}
-                                                {!canValidate && !canCancel && (
+                                                {!canPay && !canValidate && !canCancel && (
                                                     <span className="text-[13px] text-body-subtle">—</span>
                                                 )}
                                             </div>

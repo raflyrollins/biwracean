@@ -1,0 +1,297 @@
+{
+  "info": {
+    "name": "Biwracean API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://biwracean.test"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "sailing_uuid",
+      "value": ""
+    },
+    {
+      "key": "sailing_leg_id",
+      "value": ""
+    },
+    {
+      "key": "ticket_class_id",
+      "value": ""
+    },
+    {
+      "key": "order_uuid",
+      "value": ""
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "1. Auth",
+      "description": "Register a new customer or login as existing. Token auto-saves.",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    pm.collectionVariables.set('order_uuid', '');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\",\n  \"phone\": \"08123456789\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    pm.collectionVariables.set('order_uuid', '');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "login"]
+            }
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "me"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Sailings",
+      "description": "Browse available sailings. Run **List Sailings** first to auto-populate sailing_uuid + leg + ticket_class.",
+      "item": [
+        {
+          "name": "List Sailings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    var data = json.data;",
+                  "    if (data.length > 0) {",
+                  "        var sailing = data[0];",
+                  "        pm.collectionVariables.set('sailing_uuid', sailing.uuid);",
+                  "        ",
+                  "        if (sailing.legs && sailing.legs.length > 0) {",
+                  "            var leg = sailing.legs[0];",
+                  "            pm.collectionVariables.set('sailing_leg_id', leg.id);",
+                  "            ",
+                  "            if (leg.route && leg.route.ticket_availabilities && leg.route.ticket_availabilities.length > 0) {",
+                  "                var avail = leg.route.ticket_availabilities[0];",
+                  "                pm.collectionVariables.set('ticket_class_id', avail.ticket_class_id);",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/sailings?month=6&year=2026",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sailings"],
+              "query": [
+                { "key": "month", "value": "6" },
+                { "key": "year", "value": "2026" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Show Sailing",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/sailings/{{sailing_uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "sailings", "{{sailing_uuid}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Ticket Orders",
+      "description": "Run **List Sailings** first (in folder 2), then **Create Order**, then **Pay Order**.",
+      "item": [
+        {
+          "name": "List My Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ticket-orders",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ticket-orders"]
+            }
+          }
+        },
+        {
+          "name": "Create Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('order_uuid', json.data.uuid);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sailing_uuid\": \"{{sailing_uuid}}\",\n  \"sailing_leg_id\": {{sailing_leg_id}},\n  \"ticket_class_id\": {{ticket_class_id}},\n  \"quantity\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ticket-orders",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ticket-orders"]
+            }
+          }
+        },
+        {
+          "name": "Show Order",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ticket-orders/{{order_uuid}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ticket-orders", "{{order_uuid}}"]
+            }
+          }
+        },
+        {
+          "name": "Pay Order",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ticket-orders/{{order_uuid}}/pay",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ticket-orders", "{{order_uuid}}", "pay"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ticket-orders/{{order_uuid}}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ticket-orders", "{{order_uuid}}", "cancel"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
