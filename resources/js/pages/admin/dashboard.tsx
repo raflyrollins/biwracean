@@ -20,6 +20,8 @@ interface Ship {
 
 interface Route {
     ship: Ship;
+    origin_port: { id: number; name: string; code: string };
+    destination_port: { id: number; name: string; code: string };
 }
 
 interface Availability {
@@ -152,10 +154,10 @@ export default function AdminDashboard({
 
             <div className="mb-8 flex items-center justify-between">
                 <div>
-                    <h2 className="text-[22px] font-bold text-heading">
+                    <h2 className="text-[15px] font-medium text-heading">
                         Selamat datang, {auth.user.name}!
                     </h2>
-                    <p className="mt-1 text-[14px] text-body">
+                    <p className="mt-1 text-[12px] text-body-subtle">
                         Panel administrasi biwracean. Kelola data kapal, rute, dan pengaturan sistem di sini.
                     </p>
                 </div>
@@ -174,27 +176,27 @@ export default function AdminDashboard({
                     </button>
 
                     {showNotif && (
-                        <div className="absolute right-0 top-full z-50 mt-2 w-96 rounded-lg border border-border-default bg-neutral-primary-bg shadow-xl">
-                            <div className="border-b border-border-default px-4 py-3">
-                                <h3 className="text-[14px] font-semibold text-heading">Notifikasi Real-time</h3>
+                        <div className="absolute right-0 top-full z-50 mt-2 w-96 rounded-lg border border-border-default bg-neutral-primary shadow-xl">
+                            <div className="border-b border-border-default px-3 py-2.5">
+                                <h3 className="text-[11px] font-semibold text-heading">Notifikasi</h3>
                             </div>
-                            <div className="max-h-80 overflow-y-auto">
+                            <div className="max-h-72 overflow-y-auto">
                                 {notifications.length === 0 ? (
-                                    <p className="px-4 py-6 text-center text-[13px] text-body-subtle">
+                                    <p className="px-3 py-5 text-center text-[11px] text-body-subtle">
                                         Belum ada notifikasi.
                                     </p>
                                 ) : (
                                     <ul className="divide-y divide-border-default">
                                         {notifications.map((n) => (
-                                            <li key={n.id} className="flex items-start gap-3 px-4 py-3">
-                                                <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] ${
+                                            <li key={n.id} className="flex items-start gap-2.5 px-3 py-2.5">
+                                                <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] ${
                                                     n.type === 'order' ? 'bg-info-soft text-fg-info' : 'bg-success-soft text-fg-success'
                                                 }`}>
-                                                    <ShoppingCart className="h-3.5 w-3.5" />
+                                                    <ShoppingCart className="h-3 w-3" />
                                                 </span>
                                                 <div className="min-w-0 flex-1">
-                                                    <p className="text-[13px] text-body">{n.message}</p>
-                                                    <p className="text-[11px] text-body-subtle">{n.time}</p>
+                                                    <p className="text-[12px] text-body">{n.message}</p>
+                                                    <p className="text-[10px] text-body-subtle">{n.time}</p>
                                                 </div>
                                             </li>
                                         ))}
@@ -213,9 +215,9 @@ export default function AdminDashboard({
                     { label: 'Pelabuhan', value: totalPorts },
                     { label: 'Pengguna', value: totalUsers },
                 ].map((card) => (
-                    <div key={card.label} className="card p-6">
-                        <p className="text-[14px] text-body">{card.label}</p>
-                        <p className="mt-2 text-[28px] font-bold text-heading">
+                    <div key={card.label} className="card p-5">
+                        <p className="text-[11px] text-body-subtle">{card.label}</p>
+                        <p className="mt-1.5 text-[24px] font-bold text-heading">
                             {card.value}
                         </p>
                     </div>
@@ -223,19 +225,19 @@ export default function AdminDashboard({
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
-                <div className="card p-6">
-                    <h3 className="mb-4 text-[20px] font-semibold text-heading">
+                <div className="card p-5">
+                    <h3 className="mb-3 text-[13px] font-semibold text-heading">
                         Kapal Terbaru
                     </h3>
                     {latestShips.length > 0 ? (
                         <ul className="divide-y divide-border-default">
                             {latestShips.map((k) => (
-                                <li key={k.id} className="flex items-center justify-between py-3">
+                                <li key={k.id} className="flex items-center justify-between py-2.5">
                                     <div>
-                                        <p className="text-[14px] font-medium text-heading">
+                                        <p className="text-[13px] font-medium text-heading">
                                             {k.name}
                                         </p>
-                                        <p className="text-[12px] text-body-subtle">
+                                        <p className="text-[11px] text-body-subtle">
                                             {k.hull_number} &middot; {k.capacity} kursi
                                         </p>
                                     </div>
@@ -250,19 +252,19 @@ export default function AdminDashboard({
                             ))}
                         </ul>
                     ) : (
-                        <p className="text-[14px] text-body">
+                        <p className="text-[12px] text-body-subtle">
                             Belum ada data kapal.
                         </p>
                     )}
                 </div>
-                <div className="card p-6">
-                    <div className="mb-4 flex items-center justify-between">
-                        <h3 className="text-[20px] font-semibold text-heading">
+                <div className="card p-5">
+                    <div className="mb-3 flex items-center justify-between">
+                        <h3 className="text-[13px] font-semibold text-heading">
                             Ketersediaan Tiket Terbaru
                         </h3>
                         <Link
                             href="/admin/ticket-orders"
-                            className="text-[13px] font-medium text-fg-brand underline underline-offset-2 hover:no-underline"
+                            className="text-[12px] font-medium text-fg-brand underline underline-offset-2 hover:no-underline"
                         >
                             Lihat Penjualan
                         </Link>
@@ -270,15 +272,18 @@ export default function AdminDashboard({
                     {latestAvailabilities.length > 0 ? (
                         <ul className="divide-y divide-border-default">
                             {latestAvailabilities.map((k) => (
-                                <li key={k.id} className="py-3">
-                                    <p className="text-[14px] font-medium text-heading">
+                                <li key={k.id} className="py-2.5">
+                                    <p className="text-[13px] font-medium text-heading">
                                         {k.route.ship.name}
                                     </p>
-                                    <p className="text-[12px] text-body-subtle">
+                                    <p className="text-[11px] text-body-subtle">
+                                        {k.route.origin_port.name} &rarr; {k.route.destination_port.name}
+                                    </p>
+                                    <p className="text-[11px] text-body-subtle">
                                         {k.ticket_class.name} &middot; {k.date}
                                     </p>
                                     <div className="mt-1 flex items-center gap-2">
-                                        <span className="text-[13px] text-body">
+                                        <span className="text-[12px] text-body-subtle">
                                             Stok: {k.available_stock - k.sold_stock}/{k.available_stock}
                                         </span>
                                         {k.available_stock - k.sold_stock <= 5 && (
@@ -291,7 +296,7 @@ export default function AdminDashboard({
                             ))}
                         </ul>
                     ) : (
-                        <p className="text-[14px] text-body">
+                        <p className="text-[12px] text-body-subtle">
                             Belum ada ketersediaan tiket.
                         </p>
                     )}

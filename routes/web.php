@@ -30,7 +30,7 @@ Route::middleware('auth:web')->group(function () {
 
 Route::middleware(['auth:web', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/jadwal', [ScheduleController::class, 'index'])->name('jadwal');
+    Route::get('/schedule', [ScheduleController::class, 'index'])->name('schedule');
 
     Route::resource('/ships', ShipController::class)
         ->except('show')
@@ -70,6 +70,7 @@ Route::middleware(['auth:web', 'admin'])->prefix('admin')->name('admin.')->group
     Route::post('/ticket-orders', [TicketOrderController::class, 'store'])->name('ticket-orders.store');
     Route::post('/ticket-orders/{ticket_order}/pay', [TicketOrderController::class, 'pay'])->name('ticket-orders.pay');
     Route::post('/ticket-orders/{ticket_order}/validate', [TicketOrderController::class, 'validateOrder'])->name('ticket-orders.validate');
+    Route::post('/ticket-orders/{ticket_order}/upload-proof', [TicketOrderController::class, 'uploadProof'])->name('ticket-orders.upload-proof');
     Route::post('/ticket-orders/{ticket_order}/cancel', [TicketOrderController::class, 'cancel'])->name('ticket-orders.cancel');
 
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');

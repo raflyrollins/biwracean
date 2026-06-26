@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Plus } from 'lucide-react';
+import { ExternalLink, Plus } from 'lucide-react';
 import Pusher from 'pusher-js';
 import { useEffect, useState } from 'react';
 import ConfirmModal from '@/components/ui/ConfirmModal';
@@ -13,8 +13,8 @@ interface SailingLeg {
     id: number;
     origin_port_id: number;
     destination_port_id: number;
-    originPort?: { id: number; name: string };
-    destinationPort?: { id: number; name: string };
+    origin_port?: { id: number; name: string };
+    destination_port?: { id: number; name: string };
 }
 
 interface Sailing {
@@ -41,6 +41,7 @@ interface TicketOrder {
     total_price: number;
     status: string;
     notes: string | null;
+    payment_proof: string | null;
     created_at: string;
     sailing?: Sailing;
     sailing_leg?: SailingLeg;
@@ -96,7 +97,7 @@ export default function Index({
     filters: Filters;
 }) {
     const [orderList, setOrderList] = useState(orders.data);
-    const [actionTarget, setActionTarget] = useState<{ uuid: string; action: 'pay' | 'validate' | 'cancel'; label: string } | null>(null);
+    const [actionTarget, setActionTarget] = useState<{ uuid: string; action: 'setujui' | 'bayar' | 'validate' | 'cancel'; label: string } | null>(null);
 
     useEffect(() => {
         let echo: { channel: (ch: string) => { listen: (event: string, callback: (data: unknown) => void) => void } } | null = null;
@@ -172,7 +173,13 @@ export default function Index({
     };
 
     const actionMessages: Record<string, { title: string; message: (label: string) => string; confirmLabel: string; variant: 'danger' | 'warning' | 'success' }> = {
-        pay: {
+        setujui: {
+            title: 'Setujui Pembayaran',
+            message: (label) => `Setujui pembayaran tiket "${label}" berdasarkan bukti yang diupload?\n\nStok tiket akan dikurangi.`,
+            confirmLabel: 'Ya, Setujui',
+            variant: 'warning',
+        },
+        bayar: {
             title: 'Konfirmasi Pembayaran',
             message: (label) => `Konfirmasi pembayaran tiket "${label}"?\n\nPembayaran akan mengurangi stok tiket yang tersedia.`,
             confirmLabel: 'Ya, Bayar',
@@ -192,6 +199,8 @@ export default function Index({
         },
     };
 
+    const storageUrl = (path: string) => `/storage/${path}`;
+
     return (
         <AdminLayout auth={auth} title="Penjualan Tiket">
             <Head title="Penjualan Tiket" />
@@ -204,7 +213,8 @@ export default function Index({
                 variant={actionTarget ? actionMessages[actionTarget.action].variant : 'danger'}
                 onConfirm={() => {
                     if (actionTarget) {
-                        router.post(`/admin/ticket-orders/${actionTarget.uuid}/${actionTarget.action}`);
+                        const routeAction = actionTarget.action === 'setujui' ? 'pay' : actionTarget.action;
+                        router.post(`/admin/ticket-orders/${actionTarget.uuid}/${routeAction}`);
                         setActionTarget(null);
                     }
                 }}
@@ -273,22 +283,25 @@ export default function Index({
                             <th className="px-4 py-3 text-right text-[13px] font-semibold text-heading">Qty</th>
                             <th className="px-4 py-3 text-right text-[13px] font-semibold text-heading">Total</th>
                             <th className="px-4 py-3 text-center text-[13px] font-semibold text-heading">Status</th>
+                            <th className="px-4 py-3 text-center text-[13px] font-semibold text-heading">Bukti</th>
                             <th className="px-4 py-3 text-right text-[13px] font-semibold text-heading">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         {orderList.length === 0 ? (
                             <tr>
-                                <td colSpan={8} className="px-4 py-8 text-center text-[14px] text-body">
+                                <td colSpan={9} className="px-4 py-8 text-center text-[14px] text-body">
                                     Belum ada pemesanan tiket.
                                 </td>
                             </tr>
                         ) : (
                             orderList.map((order) => {
                                 const routeName = order.sailing_leg
-                                    ? `${order.sailing_leg.originPort?.name ?? '?'} → ${order.sailing_leg.destinationPort?.name ?? '?'}`
+                                    ? `${order.sailing_leg.origin_port?.name ?? '?'} → ${order.sailing_leg.destination_port?.name ?? '?'}`
                                     : '—';
-                                const canPay = order.status === 'pending';
+                                const hasProof = !!order.payment_proof;
+                                const canSetujui = order.status === 'pending' && hasProof;
+                                const canBayar = order.status === 'pending' && !hasProof;
                                 const canValidate = order.status === 'paid';
                                 const canCancel = order.status === 'pending' || order.status === 'paid';
 
@@ -313,11 +326,34 @@ export default function Index({
                                                 {statusLabels[order.status] ?? order.status}
                                             </span>
                                         </td>
+                                        <td className="px-4 py-3 text-center">
+                                            {order.payment_proof ? (
+                                                <a
+                                                    href={storageUrl(order.payment_proof)}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-1 text-[13px] font-medium text-fg-info underline underline-offset-2 hover:no-underline"
+                                                >
+                                                    <ExternalLink className="h-3.5 w-3.5" />
+                                                    Lihat
+                                                </a>
+                                            ) : (
+                                                <span className="text-[13px] text-body-subtle">—</span>
+                                            )}
+                                        </td>
                                         <td className="px-4 py-3 text-right">
                                             <div className="flex items-center justify-end gap-2">
-                                                {canPay && (
+                                                {canSetujui && (
                                                     <button
-                                                        onClick={() => setActionTarget({ uuid: order.uuid, action: 'pay', label: order.booking_code })}
+                                                        onClick={() => setActionTarget({ uuid: order.uuid, action: 'setujui', label: order.booking_code })}
+                                                        className="text-[13px] font-medium text-fg-info underline underline-offset-2 hover:no-underline"
+                                                    >
+                                                        Setujui
+                                                    </button>
+                                                )}
+                                                {canBayar && (
+                                                    <button
+                                                        onClick={() => setActionTarget({ uuid: order.uuid, action: 'bayar', label: order.booking_code })}
                                                         className="text-[13px] font-medium text-fg-info underline underline-offset-2 hover:no-underline"
                                                     >
                                                         Bayar
@@ -339,7 +375,7 @@ export default function Index({
                                                         Batalkan
                                                     </button>
                                                 )}
-                                                {!canPay && !canValidate && !canCancel && (
+                                                {!canSetujui && !canBayar && !canValidate && !canCancel && (
                                                     <span className="text-[13px] text-body-subtle">—</span>
                                                 )}
                                             </div>

@@ -10,6 +10,7 @@ use App\Models\SailingLeg;
 use App\Models\TicketAvailability;
 use App\Models\TicketClass;
 use App\Models\TicketOrder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -19,7 +20,6 @@ class TicketOrderController extends Controller
     {
         $query = TicketOrder::with([
             'sailing:id,uuid,name,departure_date',
-            'sailingLeg:id,origin_port_id,destination_port_id',
             'sailingLeg.originPort:id,name',
             'sailingLeg.destinationPort:id,name',
             'ticketClass:id,name,code',
@@ -207,5 +207,24 @@ class TicketOrderController extends Controller
 
         return redirect()->back()
             ->with('success', "Tiket {$ticketOrder->booking_code} berhasil dibatalkan.");
+    }
+
+    public function uploadProof(Request $request, TicketOrder $ticketOrder): RedirectResponse
+    {
+        if (! in_array($ticketOrder->status, ['pending', 'paid'])) {
+            return redirect()->back()
+                ->with('success', "Tiket {$ticketOrder->booking_code} tidak dapat diupload bukti pembayaran.");
+        }
+
+        $request->validate([
+            'payment_proof' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
+
+        $path = $request->file('payment_proof')->store('payments', 'public');
+
+        $ticketOrder->update(['payment_proof' => $path]);
+
+        return redirect()->back()
+            ->with('success', 'Bukti pembayaran berhasil diupload.');
     }
 }

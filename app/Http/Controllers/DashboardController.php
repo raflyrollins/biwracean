@@ -19,8 +19,15 @@ class DashboardController extends Controller
             'totalPorts' => Port::count(),
             'totalUsers' => User::count(),
             'latestShips' => Ship::latest()->limit(5)->get(),
-            'latestAvailabilities' => TicketAvailability::with(['route.ship', 'ticketClass'])
-                ->latest()
+            'latestAvailabilities' => TicketAvailability::with([
+                'route.ship',
+                'route.originPort',
+                'route.destinationPort',
+                'ticketClass',
+            ])
+                ->where('date', '>=', now()->startOfDay())
+                ->orderBy('date')
+                ->orderBy('route_id')
                 ->limit(5)
                 ->get(),
         ]);

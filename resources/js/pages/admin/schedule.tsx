@@ -64,7 +64,7 @@ export default function Schedule({ auth, grouped, month, year, daysInMonth, firs
             y++;
         }
 
-        router.get(`/admin/jadwal?month=${m}&year=${y}`, {}, { preserveState: true, preserveScroll: true });
+        router.get(`/admin/schedule?month=${m}&year=${y}`, {}, { preserveState: true, preserveScroll: true });
         setCurrentMonth(m);
         setCurrentYear(y);
         setSelectedDate(null);
@@ -92,10 +92,10 @@ export default function Schedule({ auth, grouped, month, year, daysInMonth, firs
     return (
         <AdminLayout
             auth={auth}
-            title={`Jadwal Kapal - ${MONTHS[currentMonth - 1]} ${currentYear}`}
+            title={`Schedule - ${MONTHS[currentMonth - 1]} ${currentYear}`}
             subtitle="Pilih tanggal untuk melihat jadwal dan ketersediaan tiket"
         >
-            <Head title={`Jadwal Kapal - ${MONTHS[currentMonth - 1]} ${currentYear}`} />
+            <Head title={`Schedule - ${MONTHS[currentMonth - 1]} ${currentYear}`} />
 
             <div className="mx-auto max-w-5xl">
                 <div className="card !shadow-lg p-4 sm:p-6">

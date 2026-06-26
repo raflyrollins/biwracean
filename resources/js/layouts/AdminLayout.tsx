@@ -42,7 +42,7 @@ export default function AdminLayout({ children, auth, title, subtitle, flash }: 
     }, [flash?.success]);
 
     return (
-        <div className="flex h-screen overflow-hidden bg-neutral-primary-bg">
+        <div className="flex h-screen overflow-hidden bg-neutral-primary-soft">
             {/* Desktop sidebar - always visible */}
             <div className="hidden flex-shrink-0 lg:block">
                 <Sidebar auth={auth} onClose={() => setSidebarOpen(false)} />

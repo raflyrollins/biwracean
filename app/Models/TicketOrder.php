@@ -42,6 +42,7 @@ use Illuminate\Support\Str;
     'customer_phone',
     'status',
     'notes',
+    'payment_proof',
 ])]
 class TicketOrder extends Model
 {

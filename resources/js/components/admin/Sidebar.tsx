@@ -25,7 +25,7 @@ type NavItem = {
 
 const allItems: NavItem[] = [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/admin/dashboard', permission: 'dashboard' },
-    { icon: Calendar, label: 'Jadwal', href: '/admin/jadwal', permission: 'dashboard' },
+    { icon: Calendar, label: 'Schedule', href: '/admin/schedule', permission: 'dashboard' },
     { icon: Ship, label: 'Data Kapal', href: '/admin/ships', permission: 'ships' },
     { icon: Navigation2, label: 'Pelayaran', href: '/admin/sailings', permission: 'sailings' },
     { icon: Route, label: 'Rute', href: '/admin/routes', permission: 'routes' },

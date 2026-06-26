@@ -158,6 +158,35 @@ class TicketOrderController extends Controller
         ]);
     }
 
+    public function uploadProof(Request $request, TicketOrder $order): JsonResponse
+    {
+        if ($order->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
+        if ($order->status !== 'pending') {
+            return response()->json(['message' => 'Pesanan sudah diproses.'], 422);
+        }
+
+        $validated = $request->validate([
+            'payment_proof' => 'required|image|mimes:jpg,jpeg,png|max:5120',
+        ]);
+
+        $path = $request->file('payment_proof')->store('payments', 'public');
+
+        $order->update(['payment_proof' => $path]);
+
+        return response()->json([
+            'message' => 'Bukti pembayaran berhasil diupload.',
+            'data' => $order->fresh()->load([
+                'sailing:id,uuid,name,departure_date',
+                'sailingLeg.originPort:id,name',
+                'sailingLeg.destinationPort:id,name',
+                'ticketClass:id,name,code',
+            ]),
+        ]);
+    }
+
     public function validateOrder(Request $request, TicketOrder $order): JsonResponse
     {
         if ($request->user()->is_admin) {

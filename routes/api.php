@@ -19,6 +19,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/ticket-orders', [ApiTicketOrderController::class, 'store']);
     Route::get('/ticket-orders/{order}', [ApiTicketOrderController::class, 'show']);
     Route::post('/ticket-orders/{order}/pay', [ApiTicketOrderController::class, 'pay']);
+    Route::post('/ticket-orders/{order}/upload-proof', [ApiTicketOrderController::class, 'uploadProof']);
     Route::post('/ticket-orders/{order}/validate', [ApiTicketOrderController::class, 'validateOrder']);
     Route::post('/ticket-orders/{order}/cancel', [ApiTicketOrderController::class, 'cancel']);
 });

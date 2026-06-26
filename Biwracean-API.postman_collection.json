@@ -27,6 +27,10 @@
     {
       "key": "order_uuid",
       "value": ""
+    },
+    {
+      "key": "proof_file",
+      "value": ""
     }
   ],
   "auth": {
@@ -206,7 +210,7 @@
     },
     {
       "name": "3. Ticket Orders",
-      "description": "Run **List Sailings** first (in folder 2), then **Create Order**, then **Pay Order**.",
+      "description": "Run **List Sailings** first (folder 2). Then **Create Order** → **Upload Proof** (customer uploads bukti bayar) → Admin approves via panel (**Setujui**) → **Pay Order** (opsional, customer langsung bayar tanpa upload).",
       "item": [
         {
           "name": "List My Orders",
@@ -268,7 +272,43 @@
           }
         },
         {
-          "name": "Pay Order",
+          "name": "Upload Proof",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('proof_file', json.data.payment_proof);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "payment_proof",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ticket-orders/{{order_uuid}}/upload-proof",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ticket-orders", "{{order_uuid}}", "upload-proof"]
+            }
+          }
+        },
+        {
+          "name": "Pay Order (langsung, tanpa upload)",
           "request": {
             "method": "POST",
             "header": [],

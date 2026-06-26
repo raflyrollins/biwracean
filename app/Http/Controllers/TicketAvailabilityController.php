@@ -49,7 +49,7 @@ class TicketAvailabilityController extends Controller
         $perPage = min((int) $request->get('per_page', 10), 100);
 
         return Inertia::render('admin/ticket-availabilities/index', [
-            'availabilities' => $query->latest()->paginate($perPage)->withQueryString(),
+            'availabilities' => $query->orderBy('date')->paginate($perPage)->withQueryString(),
             'filters' => $request->only(['search', 'route_uuid', 'ticket_class_id', 'date_from', 'date_to', 'per_page']),
             'ticketClasses' => TicketClass::all(),
         ]);

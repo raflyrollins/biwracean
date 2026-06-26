@@ -18,7 +18,7 @@ class ScheduleController extends Controller
             'legs.originPort',
             'legs.destinationPort',
             'legs.route.ticketAvailabilities' => function ($q) use ($month, $year) {
-                $q->whereYear('date', $year)->whereMonth('date', $month);
+                $q->whereYear('date', $year)->whereMonth('date', $month)->with('ticketClass');
             },
         ])
             ->whereYear('departure_date', $year)
@@ -29,18 +29,22 @@ class ScheduleController extends Controller
 
         $grouped = [];
         foreach ($sailings as $sailing) {
-            $date = $sailing->departure_date;
             $legs = $sailing->legs->map(function ($leg) {
                 $availabilities = $leg->route?->ticketAvailabilities ?? collect();
 
-                $classes = $availabilities->map(function ($avail) {
-                    return [
-                        'ticket_class_id' => $avail->ticket_class_id,
-                        'ticket_class_name' => $avail->ticketClass?->name,
-                        'price' => $avail->price,
-                        'available_stock' => $avail->available_stock,
-                    ];
-                });
+                $classes = $availabilities
+                    ->groupBy('ticket_class_id')
+                    ->map(function ($group) {
+                        $first = $group->first();
+
+                        return [
+                            'ticket_class_id' => $first->ticket_class_id,
+                            'ticket_class_name' => $first->ticketClass?->name,
+                            'price' => $first->price,
+                            'available_stock' => $first->available_stock,
+                        ];
+                    })
+                    ->values();
 
                 return [
                     'origin' => $leg->originPort?->name,
@@ -51,7 +55,7 @@ class ScheduleController extends Controller
                 ];
             });
 
-            $grouped[$date][] = [
+            $grouped[$sailing->departure_date][] = [
                 'uuid' => $sailing->uuid,
                 'name' => $sailing->name,
                 'ship_name' => $sailing->ship?->name,

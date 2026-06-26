@@ -40,7 +40,7 @@ class SailingController extends Controller
         $perPage = min((int) $request->get('per_page', 10), 100);
 
         return Inertia::render('admin/sailings/index', [
-            'sailings' => $query->latest()->paginate($perPage)->withQueryString(),
+            'sailings' => $query->orderBy('departure_date')->paginate($perPage)->withQueryString(),
             'filters' => $request->only(['search', 'status', 'ship_id', 'per_page']),
             'ships' => Ship::where('status', 'active')->get(),
         ]);
