@@ -142,6 +142,15 @@ export default function Index({
                     ),
                 );
             });
+
+            channel.listen('.payment-proof.uploaded', (data: unknown) => {
+                const d = data as { uuid: string; bookingCode: string; paymentProof: string };
+                setOrderList((prev) =>
+                    prev.map((o) =>
+                        o.uuid === d.uuid ? { ...o, payment_proof: d.paymentProof } : o,
+                    ),
+                );
+            });
         });
 
         return () => {

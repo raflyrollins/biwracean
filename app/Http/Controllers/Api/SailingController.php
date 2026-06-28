@@ -23,7 +23,7 @@ class SailingController extends Controller
             },
             'legs.route.ticketAvailabilities.ticketClass:id,name,code',
         ])
-            ->whereIn('status', ['scheduled', 'in_progress'])
+            ->where('status', 'scheduled')
             ->whereYear('departure_date', $year)
             ->whereMonth('departure_date', $month)
             ->orderBy('departure_date')

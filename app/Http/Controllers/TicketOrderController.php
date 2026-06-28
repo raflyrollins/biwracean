@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\PaymentProofUploaded;
 use App\Events\TicketOrderCreated;
 use App\Events\TicketOrderStatusChanged;
 use App\Events\TicketStockUpdated;
@@ -65,7 +66,7 @@ class TicketOrderController extends Controller
             },
             'legs.route.ticketAvailabilities.ticketClass:id,name,code',
         ])
-            ->whereIn('status', ['scheduled', 'in_progress'])
+            ->where('status', 'scheduled')
             ->whereDate('departure_date', '>=', now()->format('Y-m-d'))
             ->orderBy('departure_date')
             ->get();
@@ -89,7 +90,15 @@ class TicketOrderController extends Controller
             'notes' => 'nullable|string|max:500',
         ]);
 
-        $leg = SailingLeg::with('route')->findOrFail($validated['sailing_leg_id']);
+        $sailing = Sailing::where('id', $validated['sailing_id'])->firstOrFail();
+
+        if ($sailing->status !== 'scheduled') {
+            return back()->withErrors([
+                'sailing_id' => 'Pelayaran tidak dapat dipesan.',
+            ]);
+        }
+
+        $leg = SailingLeg::with('route')->where('id', $validated['sailing_leg_id'])->firstOrFail();
 
         $availability = TicketAvailability::where('route_id', $leg->route_id)
             ->where('ticket_class_id', $validated['ticket_class_id'])
@@ -223,6 +232,8 @@ class TicketOrderController extends Controller
         $path = $request->file('payment_proof')->store('payments', 'public');
 
         $ticketOrder->update(['payment_proof' => $path]);
+
+        PaymentProofUploaded::dispatch($ticketOrder);
 
         return redirect()->back()
             ->with('success', 'Bukti pembayaran berhasil diupload.');

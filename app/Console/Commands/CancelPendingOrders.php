@@ -17,8 +17,18 @@ class CancelPendingOrders extends Command
         $cutoff = now()->subHours(12);
 
         $orders = TicketOrder::where('status', 'pending')
-            ->where('created_at', '<=', $cutoff)
+            ->where(function ($q) use ($cutoff) {
+                $q->where('created_at', '<=', $cutoff)
+                    ->orWhereHas('sailing', function ($q) {
+                        $q->whereDate('departure_date', '<', now()->format('Y-m-d'));
+                    });
+            })
             ->get();
+
+        $count = $orders->count();
+        if ($count === 0) {
+            return;
+        }
 
         foreach ($orders as $order) {
             $oldStatus = $order->status;
@@ -26,9 +36,6 @@ class CancelPendingOrders extends Command
             TicketOrderStatusChanged::dispatch($order, $oldStatus);
         }
 
-        $count = $orders->count();
-        if ($count > 0) {
-            $this->info("{$count} pesanan pending dibatalkan (kadaluwarsa >12 jam).");
-        }
+        $this->info("{$count} pesanan pending dibatalkan (kadaluwarsa >12 jam atau jadwal sudah lewat).");
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Jobs\CancelPendingOrder;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -51,6 +52,20 @@ class TicketOrder extends Model
         static::creating(function (TicketOrder $order) {
             $order->uuid = (string) Str::uuid();
             $order->booking_code = static::generateBookingCode();
+        });
+
+        static::created(function (TicketOrder $order) {
+            $order->loadMissing(['sailing', 'sailingLeg']);
+
+            $departure = Carbon::parse(
+                $order->sailing->departure_date.' '.($order->sailingLeg->departure_time ?? '23:59:59')
+            );
+
+            $cancelAt = $departure->lessThan($order->created_at->copy()->addHours(12))
+                ? $departure
+                : $order->created_at->copy()->addHours(12);
+
+            CancelPendingOrder::dispatch($order)->delay($cancelAt->isPast() ? now() : $cancelAt);
         });
     }
 

@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
- * @property-read \Illuminate\Database\Eloquent\Collection<int, ShipTicketClass> $shipTicketClasses
+ * @property-read Collection<int, ShipTicketClass> $shipTicketClasses
  */
 
 /**
@@ -53,7 +54,7 @@ class Ship extends Model
         return $this->hasMany(ShipTicketClass::class, 'ship_id');
     }
 
-    /** @return \Illuminate\Database\Eloquent\Collection<int, TicketClass> */
+    /** @return Collection<int, TicketClass> */
     public function getTicketClassesAttribute()
     {
         return $this->shipTicketClasses->map(fn ($stc) => $stc->ticketClass);

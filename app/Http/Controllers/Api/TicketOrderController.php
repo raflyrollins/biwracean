@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\PaymentProofUploaded;
 use App\Events\TicketOrderCreated;
 use App\Events\TicketOrderStatusChanged;
 use App\Events\TicketStockUpdated;
@@ -22,6 +23,7 @@ class TicketOrderController extends Controller
             'sailing:id,uuid,name,departure_date',
             'sailingLeg.originPort:id,name',
             'sailingLeg.destinationPort:id,name',
+            'sailingLeg.route:id,base_price',
             'ticketClass:id,name,code',
         ])
             ->where('user_id', $request->user()->id)
@@ -42,6 +44,13 @@ class TicketOrderController extends Controller
         ]);
 
         $sailing = Sailing::where('uuid', $validated['sailing_uuid'])->firstOrFail();
+
+        if ($sailing->status !== 'scheduled') {
+            throw ValidationException::withMessages([
+                'sailing_uuid' => ['Pelayaran tidak dapat dipesan.'],
+            ]);
+        }
+
         $leg = SailingLeg::with('route')->where('id', $validated['sailing_leg_id'])->firstOrFail();
 
         if ($leg->sailing_id !== $sailing->id) {
@@ -93,6 +102,7 @@ class TicketOrderController extends Controller
             'sailing:id,uuid,name,departure_date',
             'sailingLeg.originPort:id,name',
             'sailingLeg.destinationPort:id,name',
+            'sailingLeg.route:id,base_price',
             'ticketClass:id,name,code',
         ]);
 
@@ -110,6 +120,7 @@ class TicketOrderController extends Controller
             'sailing.ship:id,name',
             'sailingLeg.originPort:id,name,city',
             'sailingLeg.destinationPort:id,name,city',
+            'sailingLeg.route:id,base_price',
             'ticketClass:id,name,code',
         ]);
 
@@ -153,6 +164,7 @@ class TicketOrderController extends Controller
                 'sailing:id,uuid,name,departure_date',
                 'sailingLeg.originPort:id,name',
                 'sailingLeg.destinationPort:id,name',
+                'sailingLeg.route:id,base_price',
                 'ticketClass:id,name,code',
             ]),
         ]);
@@ -176,12 +188,15 @@ class TicketOrderController extends Controller
 
         $order->update(['payment_proof' => $path]);
 
+        PaymentProofUploaded::dispatch($order);
+
         return response()->json([
             'message' => 'Bukti pembayaran berhasil diupload.',
             'data' => $order->fresh()->load([
                 'sailing:id,uuid,name,departure_date',
                 'sailingLeg.originPort:id,name',
                 'sailingLeg.destinationPort:id,name',
+                'sailingLeg.route:id,base_price',
                 'ticketClass:id,name,code',
             ]),
         ]);
@@ -210,6 +225,7 @@ class TicketOrderController extends Controller
                 'sailing:id,uuid,name,departure_date',
                 'sailingLeg.originPort:id,name',
                 'sailingLeg.destinationPort:id,name',
+                'sailingLeg.route:id,base_price',
                 'ticketClass:id,name,code',
             ]),
         ]);

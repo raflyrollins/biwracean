@@ -54,6 +54,14 @@ interface RealtimeStock {
     remaining: number;
 }
 
+interface PaymentProofData {
+    uuid: string;
+    bookingCode: string;
+    customerName: string;
+    origin?: string;
+    destination?: string;
+}
+
 export default function AdminDashboard({
     auth,
     totalShips,
@@ -129,6 +137,13 @@ export default function AdminDashboard({
                 const d = data as { stock: RealtimeStock };
                 const msg = `Stok ${d.stock.ticket_class} ${d.stock.ship_name}: ${d.stock.origin}→${d.stock.destination} sisa ${d.stock.remaining}`;
                 setNotifications((prev) => [{ id: Date.now(), message: msg, time: new Date().toLocaleTimeString('id-ID'), type: 'stock' as const }, ...prev].slice(0, 20));
+            });
+
+            ordersChannel.listen('.payment-proof.uploaded', (data: unknown) => {
+                const d = data as PaymentProofData;
+                const route = d.origin && d.destination ? ` (${d.origin} → ${d.destination})` : '';
+                const msg = `Bukti bayar diupload: ${d.bookingCode} — ${d.customerName}${route}`;
+                setNotifications((prev) => [{ id: Date.now(), message: msg, time: new Date().toLocaleTimeString('id-ID'), type: 'order' as const }, ...prev].slice(0, 20));
             });
         });
 
