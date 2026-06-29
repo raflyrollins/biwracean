@@ -26,6 +26,8 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string|null $remember_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read SavedPassenger[] $savedPassengers
+ * @property-read UserNotification[] $notifications
  */
 #[Fillable(['name', 'email', 'password', 'phone', 'is_admin', 'role_id'])]
 #[Hidden(['password', 'remember_token'])]
@@ -61,5 +63,17 @@ class User extends Authenticatable
     public function ticketOrders(): HasMany
     {
         return $this->hasMany(TicketOrder::class);
+    }
+
+    /** @return HasMany<SavedPassenger, $this> */
+    public function savedPassengers(): HasMany
+    {
+        return $this->hasMany(SavedPassenger::class);
+    }
+
+    /** @return HasMany<UserNotification, $this> */
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(UserNotification::class);
     }
 }

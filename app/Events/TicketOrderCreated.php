@@ -24,22 +24,51 @@ class TicketOrderCreated implements ShouldBroadcast
             'ticketClass:id,name,code',
         ]);
 
+        $passengers = $ticketOrder->passengers()->get();
+
         $this->order = [
             'id' => $ticketOrder->id,
             'uuid' => $ticketOrder->uuid,
             'booking_code' => $ticketOrder->booking_code,
             'customer_name' => $ticketOrder->customer_name,
             'customer_email' => $ticketOrder->customer_email,
+            'customer_phone' => $ticketOrder->customer_phone,
             'quantity' => $ticketOrder->quantity,
             'total_price' => $ticketOrder->total_price,
             'status' => $ticketOrder->status,
+            'notes' => $ticketOrder->notes,
+            'payment_proof' => $ticketOrder->payment_proof,
+            'origin' => $ticketOrder->sailingLeg?->originPort?->name,
+            'destination' => $ticketOrder->sailingLeg?->destinationPort?->name,
             'sailing' => $ticketOrder->sailing ? [
                 'name' => $ticketOrder->sailing->name,
                 'departure_date' => $ticketOrder->sailing->departure_date,
             ] : null,
-            'origin' => $ticketOrder->sailingLeg?->originPort?->name,
-            'destination' => $ticketOrder->sailingLeg?->destinationPort?->name,
-            'ticket_class' => $ticketOrder->ticketClass?->name,
+            'sailing_leg' => $ticketOrder->sailingLeg ? [
+                'id' => $ticketOrder->sailingLeg->id,
+                'origin_port_id' => $ticketOrder->sailingLeg->origin_port_id,
+                'destination_port_id' => $ticketOrder->sailingLeg->destination_port_id,
+                'origin_port' => $ticketOrder->sailingLeg->originPort ? [
+                    'id' => $ticketOrder->sailingLeg->originPort->id,
+                    'name' => $ticketOrder->sailingLeg->originPort->name,
+                ] : null,
+                'destination_port' => $ticketOrder->sailingLeg->destinationPort ? [
+                    'id' => $ticketOrder->sailingLeg->destinationPort->id,
+                    'name' => $ticketOrder->sailingLeg->destinationPort->name,
+                ] : null,
+            ] : null,
+            'ticket_class' => $ticketOrder->ticketClass ? [
+                'id' => $ticketOrder->ticketClass->id,
+                'name' => $ticketOrder->ticketClass->name,
+                'code' => $ticketOrder->ticketClass->code,
+            ] : null,
+            'passengers' => $passengers->map(fn ($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'nik' => $p->nik,
+                'gender' => $p->gender,
+                'date_of_birth' => $p->date_of_birth,
+            ])->all(),
             'created_at' => $ticketOrder->created_at?->toIso8601String(),
         ];
     }

@@ -10,3 +10,7 @@ Broadcast::channel('admin.ticket-orders', function (User $user) {
 Broadcast::channel('admin.ticket-stock', function (User $user) {
     return $user->is_admin;
 });
+
+Broadcast::channel('user.{id}', function (User $user, int $id) {
+    return (int) $user->id === $id;
+});

@@ -6,6 +6,7 @@ use App\Jobs\CancelPendingOrder;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -30,6 +31,7 @@ use Illuminate\Support\Str;
  * @property-read SailingLeg $sailingLeg
  * @property-read TicketClass $ticketClass
  * @property-read User $user
+ * @property-read Passenger[] $passengers
  */
 #[Fillable([
     'user_id',
@@ -92,6 +94,12 @@ class TicketOrder extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /** @return HasMany<Passenger, $this> */
+    public function passengers(): HasMany
+    {
+        return $this->hasMany(Passenger::class);
     }
 
     public static function generateBookingCode(): string

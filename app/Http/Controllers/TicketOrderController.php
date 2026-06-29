@@ -5,14 +5,17 @@ namespace App\Http\Controllers;
 use App\Events\PaymentProofUploaded;
 use App\Events\TicketOrderCreated;
 use App\Events\TicketOrderStatusChanged;
+use App\Events\TicketOrderUserNotification;
 use App\Events\TicketStockUpdated;
 use App\Models\Sailing;
 use App\Models\SailingLeg;
 use App\Models\TicketAvailability;
 use App\Models\TicketClass;
 use App\Models\TicketOrder;
+use App\Models\UserNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class TicketOrderController extends Controller
@@ -24,6 +27,7 @@ class TicketOrderController extends Controller
             'sailingLeg.originPort:id,name',
             'sailingLeg.destinationPort:id,name',
             'ticketClass:id,name,code',
+            'passengers',
         ]);
 
         if ($search = $request->get('search')) {
@@ -88,7 +92,18 @@ class TicketOrderController extends Controller
             'customer_email' => 'required|email|max:255',
             'customer_phone' => 'required|string|max:20',
             'notes' => 'nullable|string|max:500',
+            'passengers' => 'required|array|min:1',
+            'passengers.*.name' => 'required|string|max:255',
+            'passengers.*.nik' => 'required|string|max:20',
+            'passengers.*.gender' => 'required|string|in:L,P',
+            'passengers.*.date_of_birth' => 'required|date',
         ]);
+
+        if (count($validated['passengers']) !== (int) $validated['quantity']) {
+            throw ValidationException::withMessages([
+                'passengers' => 'Jumlah penumpang harus sama dengan jumlah tiket.',
+            ]);
+        }
 
         $sailing = Sailing::where('id', $validated['sailing_id'])->firstOrFail();
 
@@ -136,6 +151,15 @@ class TicketOrderController extends Controller
             'status' => 'pending',
         ]);
 
+        foreach ($validated['passengers'] as $data) {
+            $order->passengers()->create([
+                'name' => $data['name'],
+                'nik' => $data['nik'],
+                'gender' => $data['gender'],
+                'date_of_birth' => $data['date_of_birth'],
+            ]);
+        }
+
         TicketOrderCreated::dispatch($order);
 
         return redirect()->route('admin.ticket-orders.index')
@@ -170,6 +194,17 @@ class TicketOrderController extends Controller
         $ticketOrder->update(['status' => 'paid']);
         TicketOrderStatusChanged::dispatch($ticketOrder, $oldStatus);
 
+        if ($ticketOrder->user_id) {
+            TicketOrderUserNotification::dispatch($ticketOrder, $oldStatus);
+
+            UserNotification::create([
+                'user_id' => $ticketOrder->user_id,
+                'ticket_order_id' => $ticketOrder->id,
+                'type' => 'payment_confirmed',
+                'message' => "Pembayaran tiket {$ticketOrder->booking_code} telah dikonfirmasi",
+            ]);
+        }
+
         return redirect()->back()
             ->with('success', "Tiket {$ticketOrder->booking_code} berhasil dibayar.");
     }
@@ -180,6 +215,17 @@ class TicketOrderController extends Controller
             $oldStatus = $ticketOrder->status;
             $ticketOrder->update(['status' => 'validated']);
             TicketOrderStatusChanged::dispatch($ticketOrder, $oldStatus);
+
+            if ($ticketOrder->user_id) {
+                TicketOrderUserNotification::dispatch($ticketOrder, $oldStatus);
+
+                UserNotification::create([
+                    'user_id' => $ticketOrder->user_id,
+                    'ticket_order_id' => $ticketOrder->id,
+                    'type' => 'ticket_validated',
+                    'message' => "Tiket {$ticketOrder->booking_code} telah divalidasi",
+                ]);
+            }
 
             return redirect()->back()
                 ->with('success', "Tiket {$ticketOrder->booking_code} berhasil divalidasi.");
@@ -213,6 +259,17 @@ class TicketOrderController extends Controller
         $oldStatus = $ticketOrder->status;
         $ticketOrder->update(['status' => 'cancelled']);
         TicketOrderStatusChanged::dispatch($ticketOrder, $oldStatus);
+
+        if ($ticketOrder->user_id) {
+            TicketOrderUserNotification::dispatch($ticketOrder, $oldStatus);
+
+            UserNotification::create([
+                'user_id' => $ticketOrder->user_id,
+                'ticket_order_id' => $ticketOrder->id,
+                'type' => 'ticket_cancelled',
+                'message' => "Tiket {$ticketOrder->booking_code} telah dibatalkan",
+            ]);
+        }
 
         return redirect()->back()
             ->with('success', "Tiket {$ticketOrder->booking_code} berhasil dibatalkan.");

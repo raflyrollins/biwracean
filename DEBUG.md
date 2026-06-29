@@ -1,142 +1,217 @@
-# DEBUG: Route data tidak muncul di response order
+# DEBUG: Notifikasi Realtime + Database untuk SPA (Mobile API)
 
-## Problem
+## Overview
 
-Setelah `POST /api/ticket-orders` sukses, response tidak menyertakan `sailing_leg.route`.  
-SPA yang membaca `order.sailing_leg.route` mendapat `null`.
+Dua layer notifikasi:
 
-## Root Cause
+1. **Realtime** — via `TicketOrderUserNotification` broadcast ke private channel `user.{userId}` (Laravel Reverb)
+2. **Database** — via `UserNotification` model, disimpan ke tabel `user_notifications` untuk polling/history
 
-`App\Http\Controllers\Api\TicketOrderController` tidak me-load `sailingLeg.route` di eager load.
+Ketika admin mengkonfirmasi pembayaran (`pending → paid`), memvalidasi tiket (`paid → validated`), atau membatalkan tiket (`pending/paid → cancelled`), kedua layer akan dikirim jika order memiliki `user_id`.
 
-## Fix
+---
 
-Tambahkan `'sailingLeg.route:id,base_price'` ke semua `->load([...])` dan `->with([...])` di controller tersebut.
+## Layer 1: Realtime Broadcast
 
-### Metode yang perlu diubah
-
-| Method | Baris | Load type |
-|--------|-------|-----------|
-| `index()` | `with([...])` | Daftar pesanan |
-| `store()` | `$order->load([...])` | Response booking |
-| `show()` | `$order->load([...])` | Detail pesanan |
-| `pay()` | `$order->fresh()->load([...])` | Konfirmasi bayar |
-| `uploadProof()` | `$order->fresh()->load([...])` | Upload bukti |
-| `validateOrder()` | `$order->fresh()->load([...])` | Validasi tiket |
-
-### Sebelum
+### Event: `App\Events\TicketOrderUserNotification`
 
 ```php
-'sailingLeg.originPort:id,name',
-'sailingLeg.destinationPort:id,name',
-'ticketClass:id,name,code',
+class TicketOrderUserNotification implements ShouldBroadcast
 ```
 
-### Sesudah
+**Broadcast data:**
+
+| Property       | Type   | Deskripsi              |
+| -------------- | ------ | ---------------------- |
+| `uuid`         | string | UUID tiket order       |
+| `bookingCode`  | string | Kode booking           |
+| `oldStatus`    | string | Status sebelum berubah |
+| `newStatus`    | string | Status setelah berubah |
+| `customerName` | string | Nama pemesan           |
+| `userId`       | int    | ID user pemilik order  |
+
+**Channel:**
+
+`private-user.{userId}` → authorised di `routes/channels.php`:
 
 ```php
-'sailingLeg.originPort:id,name',
-'sailingLeg.destinationPort:id,name',
-'sailingLeg.route:id,base_price',
-'ticketClass:id,name,code',
+Broadcast::channel('user.{id}', function (User $user, int $id) {
+    return (int) $user->id === $id;
+});
 ```
 
-## Response berubah
+**Broadcast name:** `ticket-order.notification`
 
-Sebelum:
+---
+
+## Layer 2: Database Notification
+
+### Model: `App\Models\UserNotification`
+
+| Field             | Type                          | Deskripsi                                                   |
+| ----------------- | ----------------------------- | ----------------------------------------------------------- |
+| `id`              | int                           | Primary key                                                 |
+| `user_id`         | FK → users                    | Pemilik notifikasi                                          |
+| `ticket_order_id` | FK → ticket_orders (nullable) | Order terkait                                               |
+| `type`            | string                        | `payment_confirmed`, `ticket_validated`, `ticket_cancelled` |
+| `message`         | string                        | Teks notifikasi (lengkap dengan booking_code)               |
+| `is_read`         | boolean (default false)       | Status baca                                                 |
+| `created_at`      | timestamp                     | Waktu dibuat                                                |
+| `updated_at`      | timestamp                     | Waktu diupdate                                              |
+
+Index: `(user_id, is_read)` untuk query unread count.
+
+### API Endpoints (auth:sanctum)
+
+| Method | Endpoint                                 | Deskripsi                                             |
+| ------ | ---------------------------------------- | ----------------------------------------------------- |
+| GET    | `/api/notifications`                     | Paginate 20 notifikasi user                           |
+| GET    | `/api/notifications/unread-count`        | `{ "data": { "count": 3 } }`                          |
+| POST   | `/api/notifications/{notification}/read` | Tandai satu notifikasi sudah dibaca (cek kepemilikan) |
+| POST   | `/api/notifications/read-all`            | Tandai semua notifikasi user sudah dibaca             |
+
+Response `GET /api/notifications`:
 
 ```json
-"sailing_leg": {
-    "origin_port": { "id": 1, "name": "Tanjung Priok" },
-    "destination_port": { "id": 2, "name": "Surabaya" }
-}
-```
-
-Sesudah:
-
-```json
-"sailing_leg": {
-    "origin_port": { "id": 1, "name": "Tanjung Priok" },
-    "destination_port": { "id": 2, "name": "Surabaya" },
-    "route": { "id": 1, "base_price": 175000 }
-}
-```
-
-## TypeScript (SPA)
-
-Tambahkan `route` di interface:
-
-```typescript
-interface TicketOrder {
-    // ... existing fields
-    sailing_leg?: {
-        id: number;
-        origin_port: Port;
-        destination_port: Port;
-        route: { id: number; base_price: number }; // <-- tambah ini
-    };
+{
+    "data": [
+        {
+            "id": 1,
+            "user_id": 5,
+            "ticket_order_id": 10,
+            "type": "payment_confirmed",
+            "message": "Pembayaran tiket TK-12345 telah dikonfirmasi",
+            "is_read": false,
+            "created_at": "2026-06-29T12:00:00.000000Z",
+            "updated_at": "2026-06-29T12:00:00.000000Z",
+            "ticket_order": {
+                "id": 10,
+                "uuid": "abc-123",
+                "booking_code": "TK-12345"
+            }
+        }
+    ]
 }
 ```
 
 ---
 
-# DEBUG: Tiket sailing in_progress masih bisa dipesan
+## Event Flow + Database
 
-## Problem
+```
+Admin pay (pending → paid)
+  → TicketOrderStatusChanged::dispatch       → admin.ticket-orders
+  → TicketOrderUserNotification::dispatch    → private-user.{id}  [if user_id]
+  → UserNotification::create                 → database
 
-`POST /api/ticket-orders` dan admin `POST /admin/ticket-orders` menerima booking untuk sailing
-berstatus `in_progress` (sedang berlangsung) atau `completed`.
+Admin validate (paid → validated)
+  → TicketOrderStatusChanged::dispatch       → admin.ticket-orders
+  → TicketOrderUserNotification::dispatch    → private-user.{id}  [if user_id]
+  → UserNotification::create                 → database
 
-## Fix
-
-### 1. API: `App\Http\Controllers\Api\TicketOrderController::store()`
-
-Tambahkan pengecekan status setelah `$sailing` ditemukan, sebelum validasi leg:
-
-```php
-$sailing = Sailing::where('uuid', $validated['sailing_uuid'])->firstOrFail();
-
-if ($sailing->status !== 'scheduled') {
-    throw ValidationException::withMessages([
-        'sailing_uuid' => ['Pelayaran tidak dapat dipesan.'],
-    ]);
-}
+Admin cancel (pending/paid → cancelled)
+  → TicketOrderStatusChanged::dispatch       → admin.ticket-orders
+  → TicketOrderUserNotification::dispatch    → private-user.{id}  [if user_id]
+  → UserNotification::create                 → database
 ```
 
-### 2. API: `App\Http\Controllers\Api\SailingController::index()`
+---
 
-Filter `in_progress` dari listing pelayaran publik agar tidak membingungkan:
+## Yang Diubah
+
+### Baru
+
+| File                                                                        | Deskripsi                                                                             |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `database/migrations/2026_06_29_010069_create_user_notifications_table.php` | Migration tabel `user_notifications`                                                  |
+| `app/Models/UserNotification.php`                                           | Model + casts `is_read => boolean`, relasi `belongsTo User` & `belongsTo TicketOrder` |
+| `app/Http/Controllers/Api/UserNotificationController.php`                   | `index()`, `unreadCount()`, `markRead()`, `markAllRead()`                             |
+| `app/Events/TicketOrderUserNotification.php`                                | Event broadcast ke private channel `user.{userId}`                                    |
+
+### Diubah
+
+| File                                                 | Perubahan                                                                            |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `config/cors.php`                                    | Tambah `'broadcasting/auth'` ke `paths` (CORS untuk Echo auth)                       |
+| `routes/channels.php`                                | Tambah channel auth `user.{id}`                                                      |
+| `routes/api.php`                                     | Tambah 4 routes notification + `POST /broadcasting/auth` (auth:sanctum)              |
+| `app/Models/User.php`                                | Tambah `notifications()` HasMany + PHPDoc                                            |
+| `app/Http/Controllers/TicketOrderController.php`     | Dispatch event + simpan `UserNotification` di `pay()`, `validateOrder()`, `cancel()` |
+| `app/Http/Controllers/Api/TicketOrderController.php` | Dispatch event + simpan `UserNotification` di `pay()`, `validateOrder()`, `cancel()` |
+
+---
+
+## Catatan Penting
+
+### CORS & Guard `broadcasting/auth`
+
+**Dua endpoint broadcast auth:**
+
+| Endpoint                      | Guard           | Digunakan oleh                 |
+| ----------------------------- | --------------- | ------------------------------ |
+| `POST /broadcasting/auth`     | `web` (default) | Admin panel (Inertia, session) |
+| `POST /api/broadcasting/auth` | `auth:sanctum`  | SPA (Bearer token)             |
+
+**403 Forbidden pada SPA** terjadi karena endpoint default `/broadcasting/auth` menggunakan guard `web` (session), sementara SPA mobile login via Bearer token (`auth:sanctum`). Channel auth callback (`$user->id === $id`) return false karena user tidak terautentikasi di guard `web`.
+
+**Fix:** Buat endpoint khusus di `routes/api.php` di bawah middleware `auth:sanctum`:
 
 ```php
-// sebelum
-->whereIn('status', ['scheduled', 'in_progress'])
-
-// sesudah
-->where('status', 'scheduled')
+Route::post('/broadcasting/auth', function (Request $request) {
+    return Broadcast::auth($request);
+});
 ```
 
-### 3. Admin: `App\Http\Controllers\TicketOrderController::create()`
+SPA harus mengarahkan Echo ke endpoint ini (bukan default `/broadcasting/auth`).
 
-Filter `in_progress` dari dropdown pelayaran:
+**CORS:** `api/*` sudah ada di `config/cors.php` `paths`, jadi `/api/broadcasting/auth` otomatis tercover. Endpoint web `/broadcasting/auth` juga perlu ditambahkan manual.
 
-```php
-// sebelum
-->whereIn('status', ['scheduled', 'in_progress'])
+### Order walk-in
 
-// sesudah
-->where('status', 'scheduled')
+Order yang dibuat oleh admin tanpa `user_id` (walk-in customer) tidak mengirim notifikasi ke user manapun (pengecekan `if ($ticketOrder->user_id)` sebelum dispatch/create).
+
+### SPA Integration
+
+**Echo config — pastikan `authEndpoint`指向 `/api/broadcasting/auth`:**
+
+```typescript
+import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
+
+window.Pusher = Pusher;
+
+window.Echo = new Echo({
+    broadcaster: 'reverb',
+    key: import.meta.env.VITE_REVERB_APP_KEY,
+    wsHost: import.meta.env.VITE_REVERB_HOST,
+    wsPort: import.meta.env.VITE_REVERB_PORT,
+    wssPort: import.meta.env.VITE_REVERB_PORT,
+    forceTLS: import.meta.env.VITE_REVERB_SCHEME === 'https',
+    enabledTransports: ['ws', 'wss'],
+    authEndpoint: 'http://biwracean.test/api/broadcasting/auth',
+    auth: {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+        },
+    },
+});
 ```
 
-### 4. Admin: `App\Http\Controllers\TicketOrderController::store()`
+Dua pendekatan yang bisa jalan bersamaan:
 
-Tambahkan pengecekan status sailing:
+1. **Echo listener** — untuk realtime update badge/halaman:
 
-```php
-$sailing = Sailing::where('id', $validated['sailing_id'])->firstOrFail();
+    ```typescript
+    Echo.private(`user.${userId}`).listen('.ticket-order.notification', (e) => {
+        // update badge, refresh list
+    });
+    ```
 
-if ($sailing->status !== 'scheduled') {
-    return back()->withErrors([
-        'sailing_id' => 'Pelayaran tidak dapat dipesan.',
-    ]);
-}
-```
+2. **REST polling** — untuk initial load & fallback:
+    ```
+    GET /api/notifications/unread-count  → badge count
+    GET /api/notifications              → history list
+    POST /api/notifications/{id}/read   → mark as read
+    POST /api/notifications/read-all    → mark all read
+    ```

@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Api;
 use App\Events\PaymentProofUploaded;
 use App\Events\TicketOrderCreated;
 use App\Events\TicketOrderStatusChanged;
+use App\Events\TicketOrderUserNotification;
 use App\Events\TicketStockUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Sailing;
 use App\Models\SailingLeg;
 use App\Models\TicketAvailability;
 use App\Models\TicketOrder;
+use App\Models\UserNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -25,6 +27,7 @@ class TicketOrderController extends Controller
             'sailingLeg.destinationPort:id,name',
             'sailingLeg.route:id,base_price',
             'ticketClass:id,name,code',
+            'passengers',
         ])
             ->where('user_id', $request->user()->id)
             ->latest()
@@ -39,9 +42,21 @@ class TicketOrderController extends Controller
             'sailing_uuid' => 'required|string|exists:sailings,uuid',
             'sailing_leg_id' => 'required|integer|exists:sailing_legs,id',
             'ticket_class_id' => 'required|integer|exists:ticket_classes,id',
-            'quantity' => 'required|integer|min:1|max:10',
             'notes' => 'nullable|string|max:500',
+            'passengers' => 'required|array|min:1',
+            'passengers.*.name' => 'required|string|max:255',
+            'passengers.*.nik' => 'required|string|max:20',
+            'passengers.*.gender' => 'required|string|in:L,P',
+            'passengers.*.date_of_birth' => 'required|date',
         ]);
+
+        $quantity = count($validated['passengers']);
+
+        if ($quantity < 1 || $quantity > 10) {
+            throw ValidationException::withMessages([
+                'passengers' => ['Jumlah penumpang harus antara 1 sampai 10.'],
+            ]);
+        }
 
         $sailing = Sailing::where('uuid', $validated['sailing_uuid'])->firstOrFail();
 
@@ -72,7 +87,7 @@ class TicketOrderController extends Controller
 
         $remaining = $availability->remainingStock();
 
-        if ($remaining < $validated['quantity']) {
+        if ($remaining < $quantity) {
             $msg = $remaining > 0
                 ? "Stok tiket tidak mencukupi. Sisa: {$remaining} tiket."
                 : 'Stok tiket habis.';
@@ -80,14 +95,14 @@ class TicketOrderController extends Controller
             throw ValidationException::withMessages(['quantity' => [$msg]]);
         }
 
-        $totalPrice = $availability->price * $validated['quantity'];
+        $totalPrice = $availability->price * $quantity;
 
         $order = TicketOrder::create([
             'user_id' => $request->user()->id,
             'sailing_id' => $sailing->id,
             'sailing_leg_id' => $validated['sailing_leg_id'],
             'ticket_class_id' => $validated['ticket_class_id'],
-            'quantity' => $validated['quantity'],
+            'quantity' => $quantity,
             'total_price' => $totalPrice,
             'customer_name' => $request->user()->name,
             'customer_email' => $request->user()->email,
@@ -95,6 +110,15 @@ class TicketOrderController extends Controller
             'notes' => $validated['notes'] ?? null,
             'status' => 'pending',
         ]);
+
+        foreach ($validated['passengers'] as $data) {
+            $order->passengers()->create([
+                'name' => $data['name'],
+                'nik' => $data['nik'],
+                'gender' => $data['gender'],
+                'date_of_birth' => $data['date_of_birth'],
+            ]);
+        }
 
         TicketOrderCreated::dispatch($order);
 
@@ -104,6 +128,7 @@ class TicketOrderController extends Controller
             'sailingLeg.destinationPort:id,name',
             'sailingLeg.route:id,base_price',
             'ticketClass:id,name,code',
+            'passengers',
         ]);
 
         return response()->json(['data' => $order], 201);
@@ -122,6 +147,7 @@ class TicketOrderController extends Controller
             'sailingLeg.destinationPort:id,name,city',
             'sailingLeg.route:id,base_price',
             'ticketClass:id,name,code',
+            'passengers',
         ]);
 
         return response()->json(['data' => $order]);
@@ -158,6 +184,17 @@ class TicketOrderController extends Controller
 
         TicketOrderStatusChanged::dispatch($order, $oldStatus);
 
+        if ($order->user_id) {
+            TicketOrderUserNotification::dispatch($order, $oldStatus);
+
+            UserNotification::create([
+                'user_id' => $order->user_id,
+                'ticket_order_id' => $order->id,
+                'type' => 'payment_confirmed',
+                'message' => "Pembayaran tiket {$order->booking_code} telah dikonfirmasi",
+            ]);
+        }
+
         return response()->json([
             'message' => 'Pembayaran berhasil.',
             'data' => $order->fresh()->load([
@@ -166,6 +203,7 @@ class TicketOrderController extends Controller
                 'sailingLeg.destinationPort:id,name',
                 'sailingLeg.route:id,base_price',
                 'ticketClass:id,name,code',
+                'passengers',
             ]),
         ]);
     }
@@ -198,6 +236,7 @@ class TicketOrderController extends Controller
                 'sailingLeg.destinationPort:id,name',
                 'sailingLeg.route:id,base_price',
                 'ticketClass:id,name,code',
+                'passengers',
             ]),
         ]);
     }
@@ -219,6 +258,17 @@ class TicketOrderController extends Controller
 
         TicketOrderStatusChanged::dispatch($order, $oldStatus);
 
+        if ($order->user_id) {
+            TicketOrderUserNotification::dispatch($order, $oldStatus);
+
+            UserNotification::create([
+                'user_id' => $order->user_id,
+                'ticket_order_id' => $order->id,
+                'type' => 'ticket_validated',
+                'message' => "Tiket {$order->booking_code} telah divalidasi",
+            ]);
+        }
+
         return response()->json([
             'message' => 'Tiket berhasil divalidasi.',
             'data' => $order->fresh()->load([
@@ -227,6 +277,7 @@ class TicketOrderController extends Controller
                 'sailingLeg.destinationPort:id,name',
                 'sailingLeg.route:id,base_price',
                 'ticketClass:id,name,code',
+                'passengers',
             ]),
         ]);
     }
@@ -260,9 +311,20 @@ class TicketOrderController extends Controller
 
         TicketOrderStatusChanged::dispatch($order, $oldStatus);
 
+        if ($order->user_id) {
+            TicketOrderUserNotification::dispatch($order, $oldStatus);
+
+            UserNotification::create([
+                'user_id' => $order->user_id,
+                'ticket_order_id' => $order->id,
+                'type' => 'ticket_cancelled',
+                'message' => "Tiket {$order->booking_code} telah dibatalkan",
+            ]);
+        }
+
         return response()->json([
             'message' => 'Pesanan dibatalkan.',
-            'data' => $order->fresh(),
+            'data' => $order->fresh()->load(['passengers']),
         ]);
     }
 }
